@@ -53,6 +53,7 @@ target_include_directories(platform_s
         nrfx/mdk
         nrfx/drivers/include
         ${PLATFORM_DIR}/..
+        services/include
 )
 
 target_sources(platform_s
@@ -66,6 +67,7 @@ target_sources(platform_s
         native_drivers/spu.c
         spm_hal.c
         tfm_hal_isolation.c
+        $<$<BOOL:${TFM_PARTITION_PLATFORM}>:${CMAKE_CURRENT_SOURCE_DIR}/services/src/tfm_platform_hal_ioctl.c>
         plat_test.c
 )
 
@@ -91,6 +93,7 @@ target_include_directories(platform_ns
         nrfx/mdk
         nrfx/drivers/include
         ${PLATFORM_DIR}/..
+        services/include
     PRIVATE
         ${PLATFORM_DIR}/../interface/include
 )
@@ -117,4 +120,10 @@ if(BL2)
         PRIVATE
             ${PLATFORM_DIR}/..
     )
+endif()
+
+if (TFM_PARTITION_PLATFORM)
+install(FILES       services/include/tfm_ioctl_core_api.h
+        DESTINATION ${TFM_INSTALL_PATH}/interface/include)
+
 endif()
