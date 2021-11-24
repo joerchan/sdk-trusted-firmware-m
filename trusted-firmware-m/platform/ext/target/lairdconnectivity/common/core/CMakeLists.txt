@@ -44,6 +44,7 @@ target_include_directories(platform_s
         ${NRF_FOLDER_PATH}/nrfx/mdk
         ${NRF_FOLDER_PATH}/nrfx/drivers/include
         ${PLATFORM_DIR}/..
+        services/include
 )
 
 target_sources(platform_s
@@ -62,6 +63,7 @@ target_sources(platform_s
         ${NRF_FOLDER_PATH}/spm_hal.c
         ${NRF_FOLDER_PATH}/tfm_hal_isolation.c
         nv_counters.c
+        $<$<BOOL:${TFM_PARTITION_PLATFORM}>:${CMAKE_CURRENT_SOURCE_DIR}/services/src/tfm_platform_hal_ioctl.c>
         plat_test.c
 )
 
@@ -79,6 +81,7 @@ target_include_directories(platform_ns
         ${NRF_FOLDER_PATH}/nrfx/mdk
         ${NRF_FOLDER_PATH}/nrfx/drivers/include
         ${PLATFORM_DIR}/..
+        services/include
     PRIVATE
         ${PLATFORM_DIR}/../interface/include
 )
@@ -120,4 +123,10 @@ if(BL2)
             ${NRF_FOLDER_PATH}/nrfx_glue.c
             nv_counters.c
     )
+endif()
+
+if (TFM_PARTITION_PLATFORM)
+install(FILES       services/include/tfm_ioctl_core_api.h
+        DESTINATION ${TFM_INSTALL_PATH}/interface/include)
+
 endif()
