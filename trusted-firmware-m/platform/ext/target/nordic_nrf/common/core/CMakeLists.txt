@@ -19,6 +19,39 @@ if (NOT NRF_BOARD_SELECTED)
         "Instead of '${TFM_PLATFORM}', choose e.g. '${hint}'.")
 endif()
 
+#========================= Platform dependencies ===============================#
+
+# Pull drivers from NXP git
+if (TFM_PLATFORM_HAL_NORDIC_FILE_PATH STREQUAL "DOWNLOAD")
+
+    set(HAL_NORDIC_REMOTE https://github.com/zephyrproject-rtos/hal_nordic)
+    set(HAL_NORDIC_VERSION 077031bf6eaac5352e304ad0f1a0c5b16b4dd115)
+    message(STATUS "Pulling nordic HAL from ${HAL_NORDIC_REMOTE} @ ${HAL_NORDIC_VERSION}")
+
+
+
+    FetchContent_Declare(nordic_hal
+        GIT_REPOSITORY ${HAL_NORDIC_REMOTE}
+        GIT_TAG ${HAL_NORDIC_VERSION}
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+        GIT_SUBMODULES ""
+    )
+
+    FetchContent_GetProperties(nordic_hal)
+    if(NOT nordic_hal_POPULATED)
+        FetchContent_Populate(nordic_hal)
+        set(NORDIC_HAL_PATH ${nordic_hal_SOURCE_DIR} CACHE PATH "Path to Nordic HAL (or DOWNLOAD to get automatically" FORCE)
+    endif()
+
+
+    message(WARNING "NORDIC HAL PATH: ${NORDIC_HAL_PATH}")
+
+# Use specified path to Nordic hal folder provided by user
+else()
+
+endif()
+
 #========================= Platform common defs ===============================#
 
 # Specify the location of platform specific build dependencies.
@@ -49,9 +82,9 @@ target_include_directories(platform_s
     PUBLIC
         .
         native_drivers
-        nrfx
-        nrfx/mdk
-        nrfx/drivers/include
+        ${NORDIC_HAL_PATH}/nrfx
+        ${NORDIC_HAL_PATH}/nrfx/mdk
+        ${NORDIC_HAL_PATH}/nrfx/drivers/include
         ${PLATFORM_DIR}/..
 )
 
@@ -59,8 +92,8 @@ target_sources(platform_s
     PRIVATE
         cmsis_drivers/Driver_Flash.c
         cmsis_drivers/Driver_USART.c
-        nrfx/drivers/src/nrfx_uarte.c
-        nrfx/drivers/src/nrfx_nvmc.c
+        ${NORDIC_HAL_PATH}/nrfx/drivers/src/nrfx_uarte.c
+        ${NORDIC_HAL_PATH}/nrfx/drivers/src/nrfx_nvmc.c
         nrfx_glue.c
         native_drivers/mpu_armv8m_drv.c
         native_drivers/spu.c
@@ -79,7 +112,7 @@ target_compile_options(platform_s
 target_sources(platform_ns
     PRIVATE
         cmsis_drivers/Driver_USART.c
-        nrfx/drivers/src/nrfx_uarte.c
+        ${NORDIC_HAL_PATH}/nrfx/drivers/src/nrfx_uarte.c
         nrfx_glue.c
         plat_test.c
 )
@@ -87,9 +120,9 @@ target_sources(platform_ns
 target_include_directories(platform_ns
     PUBLIC
         .
-        nrfx
-        nrfx/mdk
-        nrfx/drivers/include
+        ${NORDIC_HAL_PATH}/nrfx
+        ${NORDIC_HAL_PATH}/nrfx/mdk
+        ${NORDIC_HAL_PATH}/nrfx/drivers/include
         ${PLATFORM_DIR}/..
     PRIVATE
         ${PLATFORM_DIR}/../interface/include
@@ -103,17 +136,17 @@ if(BL2)
             boot_hal.c
             cmsis_drivers/Driver_Flash.c
             cmsis_drivers/Driver_USART.c
-            nrfx/drivers/src/nrfx_uarte.c
-            nrfx/drivers/src/nrfx_nvmc.c
+            ${NORDIC_HAL_PATH}/nrfx/drivers/src/nrfx_uarte.c
+            ${NORDIC_HAL_PATH}/nrfx/drivers/src/nrfx_nvmc.c
             nrfx_glue.c
     )
 
     target_include_directories(platform_bl2
         PUBLIC
             .
-            nrfx
-            nrfx/mdk
-            nrfx/drivers/include
+            ${NORDIC_HAL_PATH}/nrfx
+            ${NORDIC_HAL_PATH}/nrfx/mdk
+            ${NORDIC_HAL_PATH}/nrfx/drivers/include
         PRIVATE
             ${PLATFORM_DIR}/..
     )

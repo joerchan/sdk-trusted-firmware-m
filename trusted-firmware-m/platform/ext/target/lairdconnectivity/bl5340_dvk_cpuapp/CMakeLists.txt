@@ -9,6 +9,9 @@
 cmake_policy(SET CMP0076 NEW)
 set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(NRF_BOARD_SELECTED True)
+
+message(WARNING "${PLATFORM_PATH}")
+message(WARNING "${NRF_PLATFORM_PATH}")
 # Relative path to core nordic files from scope of the lairdconnectivity/common/core folder
 set(NRF_FOLDER_PATH "../../../nordic_nrf/common/core")
 

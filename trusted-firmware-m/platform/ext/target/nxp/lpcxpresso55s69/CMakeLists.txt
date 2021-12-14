@@ -12,7 +12,7 @@ cmake_policy(SET CMP0076 NEW)
 # Pull drivers from NXP git
 if (TFM_PLATFORM_NXP_HAL_FILE_PATH STREQUAL "DOWNLOAD")
     set(NXP_HAL_FILE_PATH ${PLATFORM_DIR}/ext/target/nxp)
-    Message("-- Pulling MCUxpresso NXP SDK drivers from https://github.com/NXPmicro/mcux-sdk")
+    message(STATUS "Pulling MCUxpresso NXP SDK drivers from https://github.com/NXPmicro/mcux-sdk")
     include(pull_drivers.cmake)
 # Use specified path to NXP hal folder provided by user
 else()

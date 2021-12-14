@@ -43,12 +43,13 @@ target_include_directories(platform_s
 target_sources(platform_s
     PRIVATE
         target_cfg.c
-        ../core/nrfx/mdk/system_nrf5340_application.c
+        ${NORDIC_HAL_PATH}/nrfx/mdk/system_nrf5340_application.c
 )
 
 target_compile_definitions(platform_s
     PUBLIC
         NRF5340_XXAA_APPLICATION
+        NRF_SKIP_FICR_NS_COPY_TO_RAM
 )
 
 #========================= Platform Non-Secure ================================#
@@ -60,7 +61,7 @@ target_include_directories(platform_ns
 
 target_sources(platform_ns
     PRIVATE
-        ../core/nrfx/mdk/system_nrf5340_application.c
+        ${NORDIC_HAL_PATH}/nrfx/mdk/system_nrf5340_application.c
 )
 
 target_compile_definitions(platform_ns
@@ -80,7 +81,7 @@ if(BL2)
 
     target_sources(platform_bl2
         PRIVATE
-            ../core/nrfx/mdk/system_nrf5340_application.c
+            ${NORDIC_HAL_PATH}/nrfx/mdk/system_nrf5340_application.c
     )
 
     target_compile_definitions(platform_bl2

@@ -6,6 +6,8 @@
 #
 #-------------------------------------------------------------------------------
 
-set(NRF_PATH platform/ext/target/${TFM_PLATFORM}/..)
+set(NRF_PLATFORM_PATH platform/ext/target/nordic_nrf)
+set(PLATFORM_PATH platform/ext/target/${TFM_PLATFORM}/..)
 
-include(${NRF_PATH}/common/bl5340/config.cmake)
+include(${PLATFORM_PATH}/common/bl5340/config.cmake)
+include(${NRF_PLATFORM_PATH}/common/config.cmake)
