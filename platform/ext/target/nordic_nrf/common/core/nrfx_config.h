@@ -34,6 +34,8 @@
 
 #include <RTE_Device.h>
 
+#define NRFX_GPIOTE_ENABLED 1
+
 #if RTE_FLASH0
 #define NRFX_NVMC_ENABLED 1
 #endif

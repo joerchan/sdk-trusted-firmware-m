@@ -964,6 +964,8 @@ void tfm_spm_partition_psa_eoi(psa_signal_t irq_signal)
 
 void tfm_spm_partition_psa_panic(void)
 {
+    SPMLOG_INFMSG("PANIC!!!\r\n");
+    while(true);
     /*
      * PSA FF recommends that the SPM causes the system to restart when a secure
      * partition panics.

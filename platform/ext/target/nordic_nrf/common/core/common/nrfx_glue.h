@@ -154,7 +154,7 @@ void nrfx_critical_section_exit(void);
 //------------------------------------------------------------------------------
 
 /** @brief Atomic 32-bit unsigned type. */
-#define nrfx_atomic_t
+#define nrfx_atomic_t uint32_t
 
 /**
  * @brief Macro for storing a value to an atomic object and returning its previous value.
