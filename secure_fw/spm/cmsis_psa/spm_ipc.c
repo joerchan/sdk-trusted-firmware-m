@@ -819,6 +819,7 @@ void spm_handle_interrupt(void *p_pt, struct irq_load_info_t *p_ildi)
 
     if (flih_result == PSA_FLIH_SIGNAL) {
         spm_assert_signal(p_pt, p_ildi->signal);
+        tfm_arch_trigger_pendsv();
     }
 }
 

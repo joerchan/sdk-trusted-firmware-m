@@ -92,9 +92,6 @@ __attribute__((naked)) void PendSV_Handler(void)
 #if !defined(__ICCARM__)
         ".syntax unified                                \n"
 #endif
-        "   movs    r0, #"M2S(EXC_RETURN_SECURE_STACK)" \n"
-        "   ands    r0, lr                              \n" /* NS interrupted */
-        "   beq     v8m_pendsv_exit                     \n" /* No schedule */
         "   push    {r0, lr}                            \n" /* Save R0, LR */
         "   bl      do_schedule                         \n"
         "   pop     {r2, lr}                            \n"
