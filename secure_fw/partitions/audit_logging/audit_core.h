@@ -100,8 +100,7 @@ struct log_hdr {
     uint64_t timestamp;
     uint32_t iv_counter;
     int32_t partition_id;
-    uint32_t size;
-    uint32_t id;
+    struct psa_audit_record record;
 };
 
 /*!

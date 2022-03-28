@@ -60,24 +60,6 @@ static const char hex_values[] = "0123456789ABCDEF";
 #endif
 
 /*!
- * \def MEMBER_SIZE
- *
- * \brief Standard macro to get size of elements in a struct
- */
-#define MEMBER_SIZE(type,member) sizeof(((type *)0)->member)
-
-/*!
- * \def LOG_FIXED_FIELD_SIZE
- *
- * \brief Size of the mandatory header fields that are before the info received
- *        from the client partition, i.e.
- *        [TIMESTAMP][IV_COUNTER][PARTITION_ID][SIZE]
- */
-#define LOG_FIXED_FIELD_SIZE (MEMBER_SIZE(struct log_hdr, timestamp) + \
-                              MEMBER_SIZE(struct log_hdr, iv_counter) + \
-                              MEMBER_SIZE(struct log_hdr, partition_id) + \
-                              MEMBER_SIZE(struct log_hdr, size))
-/*!
  * \def LOG_SIZE
  *
  * \brief Size of the allocated space for the log, in bytes
@@ -89,7 +71,7 @@ static const char hex_values[] = "0123456789ABCDEF";
 /*!
  * \var log_buffer
  *
- * \brief The private buffer containing the the log in memory
+ * \brief The private buffer containing the log in memory
  *
  * \note Aligned to 4 bytes to keep the wrapping on a 4-byte aligned boundary
  */
@@ -102,7 +84,8 @@ static uint8_t log_buffer[LOG_SIZE] = {0};
  * \brief Scratch buffers needed to hold plain text (and encrypted, if
  *        available) log items to be added
  */
-static uint64_t scratch_buffer[(LOG_SIZE)/8] = {0};
+__attribute__((aligned(__alignof(struct log_hdr))))
+static uint8_t scratch_buffer[LOG_SIZE] = {0};
 
 /*!
  * \struct log_vars
@@ -164,8 +147,7 @@ struct log_hdr *GET_LOG_POINTER(const uint32_t idx)
 __attribute__ ((always_inline)) __STATIC_INLINE
 uint32_t *GET_SIZE_FIELD_POINTER(const uint32_t idx)
 {
-    return (uint32_t *) GET_LOG_POINTER( (idx+offsetof(struct log_hdr, size))
-                                         % LOG_SIZE );
+    return (uint32_t *) GET_LOG_POINTER((idx+offsetof(struct log_hdr, record) + offsetof(struct psa_audit_record, size)) % LOG_SIZE );
 }
 
 /*!
@@ -180,7 +162,7 @@ uint32_t *GET_SIZE_FIELD_POINTER(const uint32_t idx)
 __attribute__ ((always_inline)) __STATIC_INLINE
 uint32_t COMPUTE_LOG_ENTRY_SIZE(const uint32_t size)
 {
-    return (LOG_FIXED_FIELD_SIZE + size + LOG_MAC_SIZE);
+    return (LOG_HDR_SIZE + size + LOG_TLR_SIZE);
 }
 
 /*!
@@ -347,7 +329,7 @@ static psa_status_t audit_memcpy(const uint8_t *src,
  */
 static psa_status_t audit_format_buffer(const struct psa_audit_record *record,
                                         const int32_t partition_id,
-                                        uint64_t *buffer)
+                                        uint8_t *buffer)
 {
     struct log_hdr *hdr = NULL;
     struct log_tlr *tlr = NULL;
@@ -360,6 +342,7 @@ static psa_status_t audit_format_buffer(const struct psa_audit_record *record,
 
     /* Format the scratch buffer with the complete log item */
     hdr = (struct log_hdr *) buffer;
+    buffer = buffer + sizeof(struct log_hdr);
 
     /* FIXME: Timestamping needs to be obtained through Secure Time service, not
      *        yet available. Use a global timestamp for the time being, without
@@ -373,10 +356,9 @@ static psa_status_t audit_format_buffer(const struct psa_audit_record *record,
     hdr->iv_counter = 0;
     hdr->partition_id = partition_id;
 
+
     /* Copy the record into the scratch buffer */
-    status = audit_memcpy((const uint8_t *) record,
-                          size+4,
-                          (uint8_t *) &(hdr->size));
+    status = audit_memcpy((uint8_t *)record, sizeof(record) + size, (uint8_t *)&hdr->record);
     if (status != PSA_SUCCESS) {
         return status;
     }
@@ -384,8 +366,9 @@ static psa_status_t audit_format_buffer(const struct psa_audit_record *record,
     /* FIXME: The MAC here is just a dummy value for prototyping. It will be
      *        filled by a call to the crypto interface directly when available.
      */
-    tlr = (struct log_tlr *) ((uint8_t *)hdr + LOG_FIXED_FIELD_SIZE + size);
-    for (idx=0; idx<LOG_MAC_SIZE; idx++) {
+    buffer = buffer + size;
+    tlr = (struct log_tlr *) buffer;
+    for (idx=0; idx<LOG_TLR_SIZE; idx++) {
         tlr->mac[idx] = idx;
     }
 
@@ -662,7 +645,7 @@ psa_status_t audit_core_add_record(psa_invec in_vec[],
     /* Check that the entry to be added is not greater than the
      * maximum space available
      */
-    if (size > (LOG_SIZE - (LOG_FIXED_FIELD_SIZE+LOG_MAC_SIZE))) {
+    if (size > (LOG_SIZE - (LOG_HDR_SIZE+LOG_TLR_SIZE))) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
 
@@ -687,7 +670,7 @@ psa_status_t audit_core_add_record(psa_invec in_vec[],
     }
 
     /* Format the scratch buffer with the complete log item */
-    status = audit_format_buffer(record, partition_id, &scratch_buffer[0]);
+    status = audit_format_buffer(record, partition_id, (uint8_t *)scratch_buffer);
     if (status != PSA_SUCCESS) {
         return status;
     }
@@ -695,7 +678,7 @@ psa_status_t audit_core_add_record(psa_invec in_vec[],
     /* TODO: At this point, encryption should be called if supported */
 
     /* Do the copy of the log item to be added in the log */
-    status = audit_buffer_copy((const uint8_t *) &scratch_buffer[0],
+    status = audit_buffer_copy((const uint8_t *) scratch_buffer,
                                COMPUTE_LOG_ENTRY_SIZE(size),
                                (uint8_t *) &log_buffer[start_pos]);
     if (status != PSA_SUCCESS) {
