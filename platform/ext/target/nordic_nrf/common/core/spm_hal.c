@@ -20,11 +20,10 @@
 /* Get address of memory regions to configure MPU */
 extern const struct memory_region_limits memory_regions;
 
-static void log_spu_irq_debug_information(void)
+static void spu_dump_context(void)
 {
-    SPMLOG_ERRMSG("SPU IRQ triggered\r\n");
+    SPMLOG_ERRMSG("SPU fault\r\n");
 
-#if TFM_SPM_LOG_LEVEL >= TFM_SPM_LOG_LEVEL_DEBUG
     /* Report which type of violation occured */
     if(NRF_SPU->EVENTS_RAMACCERR)
     {
@@ -38,25 +37,13 @@ static void log_spu_irq_debug_information(void)
     {
         SPMLOG_DBGMSG("NRF_SPU->EVENTS_FLASHACCERR triggered\r\n");
     }
-
-#ifdef TFM_EXCEPTION_INFO_DUMP
-
-    /* None of the error types fit perfectly for an SPU_IRQ (not even
-     * SecureFault), so we use type 64 (which is unknown to
-     * exception_info). */
-    EXCEPTION_INFO(64);
-#else
-    SPMLOG_ERRMSG("Enable TFM_EXCEPTION_INFO_DUMP\r\n");
-#endif
-
-#else
-    SPMLOG_ERRMSG("Enable TFM_SPM_LOG_LEVEL_DEBUG\r\n");
-#endif
 }
 
-void SPU_IRQHandler(void)
+__attribute__((naked)) void SPU_IRQHandler(void)
 {
-    log_spu_irq_debug_information();
+    EXCEPTION_INFO(64);
+
+    spu_dump_context();
 
     /* Clear SPU interrupt flag and pending SPU IRQ */
     spu_clear_events();
