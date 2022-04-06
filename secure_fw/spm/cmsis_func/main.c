@@ -20,7 +20,8 @@
 #include "tfm_version.h"
 #include "tfm_plat_otp.h"
 #include "tfm_plat_provisioning.h"
-
+#include "nrf.h"
+#include "debug.h"
 /*
  * Avoids the semihosting issue
  * FixMe: describe 'semihosting issue'
@@ -48,7 +49,6 @@ static fih_int tfm_core_init(void)
 #ifdef TFM_FIH_PROFILE_ON
     fih_int fih_rc = FIH_FAILURE;
 #endif
-
     /*
      * Access to any peripheral should be performed after programming
      * the necessary security components such as PPC/SAU.
@@ -145,7 +145,12 @@ int c_main(void)
 {
     enum spm_err_t spm_err = SPM_ERR_GENERIC_ERR;
     fih_int fih_rc = FIH_FAILURE;
+	debug_pin_cpuapp_range_enable(2, 6);
+	debug_pin_cpuapp_range_test(2, 6);
+    debug_pin_cpunet_range_enable(7, 8);
+	debug_pin_cpuapp_event(2, &NRF_SPU->PUBLISH_FLASHACCERR);
 
+debug_pin_cpuapp_set(4);
     /* set Main Stack Pointer limit */
     tfm_arch_init_secure_msp((uint32_t)&REGION_NAME(Image$$,
                                                     ARM_LIB_STACK,
@@ -211,7 +216,7 @@ int c_main(void)
     /* Jumps to non-secure code */
     SPMLOG_DBGMSG("\033[1;34mJumping to non-secure code...\033[0m\r\n");
 #endif
-
+debug_pin_cpuapp_clear(4);
     jump_to_ns_code();
 
     return 0;

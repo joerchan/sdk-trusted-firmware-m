@@ -16,6 +16,7 @@
 #include "region_defs.h"
 #include "region.h"
 #include "exception_info.h"
+#include "debug.h"
 
 /* Get address of memory regions to configure MPU */
 extern const struct memory_region_limits memory_regions;
@@ -43,13 +44,14 @@ __attribute__((naked)) void SPU_IRQHandler(void)
 {
     EXCEPTION_INFO(64);
 
+debug_pin_cpuapp_set(3);
     spu_dump_context();
 
     /* Clear SPU interrupt flag and pending SPU IRQ */
     spu_clear_events();
 
     NVIC_ClearPendingIRQ(SPU_IRQn);
-
+debug_pin_cpuapp_clear(3);
     /* Inform TF-M core that isolation boundary has been violated */
     tfm_access_violation_handler();
 }
@@ -183,6 +185,8 @@ enum tfm_plat_err_t tfm_spm_hal_configure_default_isolation(
     // privileged secure partitions and unprivileged secure
     // partitions.
     (void)privileged;
+
+    spu_clear_events();
 
     if (!platform_data) {
         return TFM_PLAT_ERR_INVALID_INPUT;
