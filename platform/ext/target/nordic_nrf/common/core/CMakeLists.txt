@@ -66,6 +66,7 @@ target_sources(platform_s
         cmsis_drivers/Driver_Flash.c
         ${HAL_NORDIC_PATH}/nrfx/drivers/src/nrfx_nvmc.c
         nrfx_glue.c
+        hw_init.c
         native_drivers/mpu_armv8m_drv.c
         native_drivers/spu.c
         spm_hal.c
@@ -75,6 +76,18 @@ target_sources(platform_s
     PUBLIC
         plat_test.c
 )
+
+if (NRF_HW_INIT_RESET_ON_BOOT)
+    target_sources(platform_s
+        PRIVATE
+            hw_init.c
+    )
+
+    target_compile_definitions(platform_s
+        PUBLIC
+            NRF_HW_INIT_RESET_ON_BOOT
+    )
+endif()
 
 if(TFM_PARTITION_PLATFORM)
     target_sources(platform_s
