@@ -104,6 +104,6 @@ __attribute__((naked)) void UsageFault_Handler(void)
 
     __ASM volatile(
         "bl        C_UsageFault_Handler   \n"
-        "b         .                       \n"
+        "b         .                      \n"
     );
 }
