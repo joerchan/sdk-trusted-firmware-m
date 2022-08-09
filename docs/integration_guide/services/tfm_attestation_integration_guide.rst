@@ -498,10 +498,6 @@ those flags. The list of flags are:
 
 - ``ATTEST_INCLUDE_OPTIONAL_CLAIMS``: Include also the optional claims to the
   attestation token. Default value: ON.
-- ``ATTEST_INCLUDE_TEST_CODE``: Test code is removed from COSE library and from
-  attestation test suite if it is OFF. Its default value depends on the build
-  type. It is ON if build type is ``Debug``, otherwise OFF (different kinds
-  of ``Release`` builds).
 - ``ATTEST_INCLUDE_COSE_KEY_ID``: COSE key-id is an optional field in the COSE
   unprotected header. Key-id is calculated and added to the COSE header based
   on the value of this flag. Default value: OFF.
