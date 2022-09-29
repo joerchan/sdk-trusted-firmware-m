@@ -201,6 +201,9 @@ static uint32_t ipc_system_run(void)
         tfm_core_panic();
     }
 
+    stdio_uninit();
+    target_cfg_stdio_uninit();
+
     return control;
 }
 

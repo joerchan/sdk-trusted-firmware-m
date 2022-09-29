@@ -560,6 +560,16 @@ enum tfm_plat_err_t spu_init_cfg(void)
     return TFM_PLAT_ERR_SUCCESS;
 }
 
+void target_cfg_stdio_uninit(void)
+{
+    spu_peripheral_config_non_secure((uint32_t)NRF_SPIM0, false);
+}
+
+void target_cfg_stdio_init(void)
+{
+    spu_peripheral_config_secure((uint32_t)NRF_SPIM0, false);
+}
+
 enum tfm_plat_err_t spu_periph_init_cfg(void)
 {
     /* Peripheral configuration */
@@ -581,10 +591,10 @@ enum tfm_plat_err_t spu_periph_init_cfg(void)
      * - TWISx
      * - UARTEx
      */
-    spu_peripheral_config_non_secure((uint32_t)NRF_SPIM0, false);
+    spu_peripheral_config_non_secure((uint32_t)NRF_SPIM1, false);
 #ifndef SECURE_UART1
     /* UART1 is a secure peripheral, so we need to leave Serial-Box 1 as Secure */
-    spu_peripheral_config_non_secure((uint32_t)NRF_SPIM1, false);
+    spu_peripheral_config_non_secure((uint32_t)NRF_SPIM0, false);
 #endif
     spu_peripheral_config_non_secure((uint32_t)NRF_SPIM2, false);
     spu_peripheral_config_non_secure((uint32_t)NRF_SPIM3, false);

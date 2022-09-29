@@ -176,6 +176,9 @@ static void dump_error(uint32_t error_type)
 {
     bool stack_error = false;
 
+    target_cfg_stdio_init();
+    stdio_init();
+
     SPMLOG_ERRMSG("FATAL ERROR: ");
     switch (error_type) {
     case EXCEPTION_TYPE_SECUREFAULT:
