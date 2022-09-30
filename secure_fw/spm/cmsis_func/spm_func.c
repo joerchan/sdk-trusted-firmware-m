@@ -844,7 +844,7 @@ int32_t tfm_spm_sfn_request_thread_mode(struct tfm_sfn_req_s *desc_ptr)
     res = tfm_core_check_sfn_parameters(desc_ptr, &iovecs);
     if (res != TFM_SUCCESS) {
         /* The sanity check of iovecs failed. */
-        return (int32_t)PSA_ERROR_PROGRAMMER_ERROR;
+        return (int32_t)res;
     }
 
     /* No excReturn value is needed as no exception handling is used */
