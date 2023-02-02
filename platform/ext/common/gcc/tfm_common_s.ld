@@ -85,6 +85,11 @@ SECTIONS
     . = ADDR(.TFM_VECTORS) + S_CODE_VECTOR_TABLE_SIZE;
 #endif
 
+    .TFM_CODE_START :
+    {
+        . = MAX(., TFM_LINKER_CODE_START_RESERVED);
+    } > FLASH
+
 #if defined(CONFIG_TFM_USE_TRUSTZONE) && !defined(TFM_LINKER_VENEERS_LOCATION_END)
     VENEERS()
 #endif
