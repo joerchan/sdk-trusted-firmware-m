@@ -16,6 +16,7 @@ fetch_remote_library(
     FETCH_CONTENT_ARGS
         GIT_REPOSITORY      https://github.com/OpenAMP/libmetal.git
         GIT_TAG             ${LIBMETAL_VERSION}
+        GIT_PROGRESS        TRUE
 )
 
 if (NOT LIB_BINARY_PATH_VAR)

@@ -14,6 +14,7 @@ fetch_remote_library(
     FETCH_CONTENT_ARGS
         GIT_REPOSITORY      https://github.com/OpenAMP/open-amp.git
         GIT_TAG             ${OPENAMP_VERSION}
+        GIT_PROGRESS        TRUE
 )
 
 if (NOT LIB_BINARY_PATH_VAR)
