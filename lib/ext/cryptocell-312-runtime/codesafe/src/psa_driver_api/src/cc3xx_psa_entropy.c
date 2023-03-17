@@ -19,6 +19,7 @@
 #include "cc_rnd_common.h"
 #include "cc_rng_plat.h"
 #include "llf_rnd_trng.h"
+#include "cc_util_defs.h"
 
 /** \defgroup psa_entropy PSA driver entry points for entropy collection
  *
@@ -38,7 +39,7 @@ psa_status_t cc3xx_get_entropy(uint32_t flags, size_t *estimate_bits,
     CCError_t cc_err;
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     uint32_t *entrSource_ptr;
-    uint32_t estimate_bytes;
+    uint32_t entrSource_size;
 
     if (output == NULL) {
         CC_PAL_LOG_ERR("output cannot be NULL");
@@ -66,7 +67,7 @@ psa_status_t cc3xx_get_entropy(uint32_t flags, size_t *estimate_bits,
     if (cc_err != CC_OK) {
         CC_PAL_LOG_ERR("Error: RNG_PLAT_SetUserRngParameters() failed");
         status = PSA_ERROR_HARDWARE_FAILURE;
-        goto end;
+        goto cleanup;
     }
 
     cc_err = LLF_RND_GetTrngSource(&rndState,   /*in/out*/
@@ -74,24 +75,26 @@ psa_status_t cc3xx_get_entropy(uint32_t flags, size_t *estimate_bits,
                                    0,           /*in  -  isContinued - false*/
                                    NULL,        /*unused*/
                                    &entrSource_ptr,             /*out*/
-                                   (uint32_t *)&estimate_bytes, /*out*/
+                                   &entrSource_size,            /*out*/
                                    (uint32_t *)&rndWorkBuff,    /*in*/
                                    0 /*unused*/);
     if (cc_err != CC_OK) {
         status = PSA_ERROR_HARDWARE_FAILURE;
-    } else {
-
-        CC_PalMemCopy(output,
-                      entrSource_ptr + CC_RND_TRNG_SRC_INNER_OFFSET_WORDS,
-                      output_size);
-        *estimate_bits = PSA_BYTES_TO_BITS(estimate_bytes);
-
-        status = PSA_SUCCESS;
-
-        CC_PalMemSetZero(&rndWorkBuff, sizeof(CCRndWorkBuff_t));
-        CC_PalMemSetZero(&rndState, sizeof(CCRndState_t));
-        CC_PalMemSetZero(&trngParams, sizeof(CCRndParams_t));
+        goto cleanup;
     }
+
+    output_size = min(output_size, entrSource_size);
+    CC_PalMemCopy(output,
+                  entrSource_ptr + CC_RND_TRNG_SRC_INNER_OFFSET_WORDS,
+                  output_size);
+    *estimate_bits = PSA_BYTES_TO_BITS(output_size);
+
+    status = PSA_SUCCESS;
+
+cleanup:
+    CC_PalMemSetZero(&rndWorkBuff, sizeof(CCRndWorkBuff_t));
+    CC_PalMemSetZero(&rndState, sizeof(CCRndState_t));
+    CC_PalMemSetZero(&trngParams, sizeof(CCRndParams_t));
 
 end:
     return status;
