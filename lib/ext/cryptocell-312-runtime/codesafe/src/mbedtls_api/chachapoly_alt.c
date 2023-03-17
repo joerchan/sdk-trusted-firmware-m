@@ -99,10 +99,10 @@ int mbedtls_chachapoly_finish( mbedtls_chachapoly_context *ctx,
     return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
 }
 
-static int chachapoly_crypt_and_tag( mbedtls_chachapoly_mode_t mode,
+static int chachapoly_crypt_and_tag( mbedtls_chachapoly_context *ctx,
+                                     mbedtls_chachapoly_mode_t mode,
                                      size_t length,
                                      const unsigned char nonce[12],
-                                     const unsigned char key[32],
                                      const unsigned char *aad,
                                      size_t aad_len,
                                      const unsigned char *input,
@@ -116,10 +116,6 @@ static int chachapoly_crypt_and_tag( mbedtls_chachapoly_mode_t mode,
     mbedtls_poly_mac polyMac = {0};
     const uint8_t *pCipherData = NULL;
 
-    if (key == NULL) {
-        return MBEDTLS_ERR_POLY1305_BAD_INPUT_DATA;
-    }
-
     if (mode == MBEDTLS_CHACHAPOLY_ENCRYPT) {
         pCipherData = output;
     } else if (mode == MBEDTLS_CHACHAPOLY_DECRYPT) {
@@ -130,7 +126,7 @@ static int chachapoly_crypt_and_tag( mbedtls_chachapoly_mode_t mode,
 
     // 1. Generate poly key
     // Calling mbedtls_chacha with data=0 is like performing the chacha block function without the encryption
-    rc = mbedtls_chacha20_crypt( key, nonce, 0, sizeof(chachaInState), chachaInState, chachaOutState );
+    rc = mbedtls_chacha20_crypt( ctx->key, nonce, 0, sizeof(chachaInState), chachaInState, chachaOutState );
     if (rc != 0) {
         goto end_with_error;
     }
@@ -139,7 +135,7 @@ static int chachapoly_crypt_and_tag( mbedtls_chachapoly_mode_t mode,
 
     // 2. Encryption pDataIn
     if (mode == MBEDTLS_CHACHAPOLY_ENCRYPT) {
-        rc = mbedtls_chacha20_crypt( key, nonce, 1, length, (uint8_t *)input, (uint8_t *)output );
+        rc = mbedtls_chacha20_crypt( ctx->key, nonce, 1, length, (uint8_t *)input, (uint8_t *)output );
         if (rc != 0) {
             goto end_with_error;
         }
@@ -155,7 +151,7 @@ static int chachapoly_crypt_and_tag( mbedtls_chachapoly_mode_t mode,
     CC_PalMemCopy(tag, polyMac, sizeof(polyMac));
 
     if (mode == MBEDTLS_CHACHAPOLY_DECRYPT) {
-        rc = mbedtls_chacha20_crypt( key, nonce, 1, length, (uint8_t *)input, (uint8_t *)output );
+        rc = mbedtls_chacha20_crypt( ctx->key, nonce, 1, length, (uint8_t *)input, (uint8_t *)output );
         if (rc != 0) {
             goto end_with_error;
         }
@@ -194,8 +190,8 @@ int mbedtls_chachapoly_encrypt_and_tag( mbedtls_chachapoly_context *ctx,
         return MBEDTLS_ERR_POLY1305_BAD_INPUT_DATA;
     }
 
-    return( chachapoly_crypt_and_tag( MBEDTLS_CHACHAPOLY_ENCRYPT,
-                                      length, nonce, ctx->key, aad, aad_len,
+    return( chachapoly_crypt_and_tag( ctx, MBEDTLS_CHACHAPOLY_ENCRYPT,
+                                      length, nonce, aad, aad_len,
                                       input, output, tag ) );
 }
 
@@ -213,7 +209,7 @@ int mbedtls_chachapoly_auth_decrypt( mbedtls_chachapoly_context *ctx,
     int diff;
     size_t i;
 
-    if ( (nonce == NULL) || (tag == NULL) ) {
+    if ( (ctx == NULL) || (nonce == NULL) || (tag == NULL) ) {
         return MBEDTLS_ERR_POLY1305_BAD_INPUT_DATA;
     }
 
@@ -227,8 +223,8 @@ int mbedtls_chachapoly_auth_decrypt( mbedtls_chachapoly_context *ctx,
         return MBEDTLS_ERR_POLY1305_BAD_INPUT_DATA;
     }
 
-    if ( (ret = chachapoly_crypt_and_tag( MBEDTLS_CHACHAPOLY_DECRYPT,
-                                      length, nonce, ctx->key, aad, aad_len,
+    if ( (ret = chachapoly_crypt_and_tag( ctx, MBEDTLS_CHACHAPOLY_DECRYPT,
+                                      length, nonce, aad, aad_len,
                                       input, output, check_tag ) ) != 0 ) {
         return( ret );
     }
