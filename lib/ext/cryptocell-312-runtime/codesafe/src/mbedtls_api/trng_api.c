@@ -10,6 +10,7 @@
 #include "cc_pal_log.h"
 #include "mbedtls_common.h"
 #include "cc_pal_mem.h"
+#include "cc_util_defs.h"
 
 #include "mbedtls/build_info.h"
 
@@ -59,6 +60,7 @@ int mbedtls_hardware_poll( void *data,
     CCRndParams_t trngParams;
     int ret, Error = 0;
     uint32_t  *entrSource_ptr;
+    uint32_t entrSource_size;
 
     CC_UNUSED_PARAM(data);
 
@@ -99,23 +101,19 @@ int mbedtls_hardware_poll( void *data,
                 &rndState ,    /*in/out*/
                 &trngParams,       /*in/out*/
                 0,                 /*in  -  isContinued - false*/
-                (uint32_t*)&len,  /*in/out*/
+                (uint32_t*)NULL,   /*unused*/
                 &entrSource_ptr,   /*out*/
-                (uint32_t*)olen,               /*out*/
+                &entrSource_size,  /*out*/
                 (uint32_t*)rndWorkBuff_ptr,   /*in*/
-                0                  /*in - isFipsSupport false*/ );
+                0                  /*unused*/ );
     if ( ret != 0 )
     {
         CC_PAL_LOG_ERR( "Error: LLF_RND_GetTrngSource() failed.\n" );
         GOTO_CLEANUP( -1 );
     }
 
-    if (*olen <= len ){
-        CC_PalMemCopy ( output, entrSource_ptr + CC_RND_TRNG_SRC_INNER_OFFSET_WORDS , *olen );
-    } else{
-        CC_PAL_LOG_ERR( "buffer length is smaller than LLF_RND_GetTrngSource output length\n" );
-        GOTO_CLEANUP( -1 );
-    }
+    *olen = min(len, entrSource_size);
+    CC_PalMemCopy ( output, entrSource_ptr + CC_RND_TRNG_SRC_INNER_OFFSET_WORDS , *olen );
 
 Cleanup:
     mbedtls_zeroize_internal( rndWorkBuff_ptr, sizeof( CCRndWorkBuff_t ) );
