@@ -35,6 +35,15 @@ extern "C"
 /******************************************************************************
 *                           DEFINITIONS
 ******************************************************************************/
+
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
 /*! Supported AES key size in bits. */
 #define CC_UTIL_AES_128BIT_SIZE 16  // same as CC_AES_128_BIT_KEY_SIZE
 #define CC_UTIL_AES_192BIT_SIZE 24  // same as CC_AES_192_BIT_KEY_SIZE

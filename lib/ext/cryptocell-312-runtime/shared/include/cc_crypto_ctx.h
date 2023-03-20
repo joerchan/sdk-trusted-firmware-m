@@ -15,11 +15,7 @@
 #include <stdint.h>
 #endif
 
-
-#ifndef max
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
+#include "cc_util_defs.h"
 
 /* context size */
 #ifndef CC_CTX_SIZE_LOG2
