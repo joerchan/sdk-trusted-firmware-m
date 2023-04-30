@@ -111,10 +111,13 @@ static psa_status_t builtin_key_get_attributes(
 }
 
 static psa_status_t derive_subkey_into_buffer(
-        struct tfm_builtin_key_t *key_slot, mbedtls_key_owner_id_t owner,
+        struct tfm_builtin_key_t *key_slot, psa_key_attributes_t *attributes,
         uint8_t *key_buffer, size_t key_buffer_size, size_t *key_buffer_length)
 {
-    int mbedtls_err;
+    // int mbedtls_err;
+    mbedtls_svc_key_id_t key_id = psa_get_key_id(attributes);
+    mbedtls_key_owner_id_t owner = MBEDTLS_SVC_KEY_ID_GET_OWNER_ID(key_id);
+        
 
 #ifdef TFM_PARTITION_TEST_PS
     /* Hack to allow the PS tests to work, since they directly call
@@ -133,7 +136,42 @@ static psa_status_t derive_subkey_into_buffer(
      * it'll be necessary to add a special case (probably if owner == 0) to make
      * sure the new PSA derivation request doesn't end up back here.
      */
-    mbedtls_err = mbedtls_hkdf(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
+
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_derivation_operation_t operation = PSA_KEY_DERIVATION_OPERATION_INIT;
+    size_t capacity = PSA_BITS_TO_BYTES(key_buffer_size);
+    psa_status_t status;
+
+    status = psa_key_derivation_setup(&operation, PSA_ALG_HKDF(PSA_ALG_SHA_256));
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = psa_key_derivation_set_capacity(&operation, capacity);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = psa_key_derivation_input_key(&operation, PSA_KEY_DERIVATION_INPUT_SECRET, key_id);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+    
+    status = psa_key_derivation_input_bytes(
+        &operation, PSA_KEY_DERIVATION_INPUT_INFO,
+        (uint8_t *)&owner, sizeof(owner));
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = psa_key_derivation_output_key(&key_attributes, &operation, key_buffer);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    (void)psa_key_derivation_abort(&operation);
+
+    int mbedtls_err = mbedtls_hkdf(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
                                NULL, 0, key_slot->key, key_slot->key_len,
                                (uint8_t *)&owner, sizeof(owner), key_buffer,
                                key_buffer_size);
@@ -191,8 +229,6 @@ psa_status_t tfm_builtin_key_loader_get_key_buffer(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    key_id = psa_get_key_id(attributes);
-
     /* If a key can be used for derivation, we derive a further subkey for each
      * owner to prevent multiple owners deriving the same keys as each other.
      * For keys for encryption and signing, it's assumed that if multiple
@@ -201,7 +237,7 @@ psa_status_t tfm_builtin_key_loader_get_key_buffer(
      */
     if (psa_get_key_usage_flags(attributes) & PSA_KEY_USAGE_DERIVE) {
         err = derive_subkey_into_buffer(key_slot,
-                                        MBEDTLS_SVC_KEY_ID_GET_OWNER_ID(key_id),
+                                        attributes,
                                         key_buffer, key_buffer_size,
                                         key_buffer_length);
     } else {
